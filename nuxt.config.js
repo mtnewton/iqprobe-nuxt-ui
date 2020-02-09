@@ -1,5 +1,7 @@
+import bodyParser from 'body-parser'
+
 export default {
-  mode: 'spa',
+  mode: 'universal',
   /*
    ** Headers of the page
    */
@@ -23,11 +25,11 @@ export default {
   /*
    ** Global CSS
    */
-  css: [],
+  css: ['bootswatch/dist/darkly/bootstrap.min.css'],
   /*
    ** Plugins to load before mounting the App
    */
-  plugins: [],
+  plugins: ['~/plugins/axios'],
   /*
    ** Nuxt.js dev-modules
    */
@@ -41,10 +43,41 @@ export default {
   modules: [
     // Doc: https://axios.nuxtjs.org/usage
     '@nuxtjs/axios',
+    '@nuxtjs/auth',
     '@nuxtjs/pwa',
     // Doc: https://github.com/nuxt-community/dotenv-module
-    '@nuxtjs/dotenv'
+    '@nuxtjs/dotenv',
+    'bootstrap-vue/nuxt'
   ],
+  auth: {
+    redirect: {
+      login: '/',
+      logout: '/',
+      callback: '/',
+      home: '/dashboard'
+    },
+    strategies: {
+      local: {
+        endpoints: {
+          login: {
+            url: '/login',
+            method: 'post',
+            propertyName: 'access_token'
+          },
+          user: { url: '/api/user', method: 'get', propertyName: false }
+        }
+      }
+    }
+  },
+  router: {
+    middleware: ['auth']
+  },
+  /*
+   ** Add server middleware
+   ** Nuxt.js uses `connect` module as server
+   ** So most of express middleware works with nuxt.js server middleware
+   */
+  serverMiddleware: [bodyParser.json(), '~/server/login', '~/server/api'],
   /*
    ** Axios module configuration
    ** See https://axios.nuxtjs.org/options
@@ -57,6 +90,16 @@ export default {
     /*
      ** You can extend webpack config here
      */
-    extend(config, ctx) {}
+    extend(config, ctx) {
+      // Run ESLint on save
+      if (ctx.isDev && ctx.isClient) {
+        config.module.rules.push({
+          enforce: 'pre',
+          test: /\.(js|vue)$/,
+          loader: 'eslint-loader',
+          exclude: /(node_modules)/
+        })
+      }
+    }
   }
 }
